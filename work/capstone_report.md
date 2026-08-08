@@ -2,7 +2,7 @@
 
 - **Author:** Uns Ahmad
 - **Lane:** Lane 2 (Refresh / Content Opportunity Scoring)
-- **Repo:** github.com/DEATHVIPERX/FLYRANK-INTERN
+- **Repo:** https://github.com/DEATHVIPERX/FLYRANK-INTERN
 - **Date:** August 9, 2026
 
 ## 1. Abstract
