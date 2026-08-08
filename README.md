@@ -1,115 +1,37 @@
-# FlyRank ML Internship — Starter Repo
+# Capstone Report — Refresh / Content Opportunity Scoring
 
-**Applied Search Intelligence: Google Search Ranking & Discoverability**
+- **Author:** Uns Ahmad
+- **Lane:** Lane 2 (Refresh / Content Opportunity Scoring)
+- **Repo:** https://github.com/DEATHVIPERX/FLYRANK-INTERN
+- **Date:** August 9, 2026
 
-This is the starting point for the FlyRank ML Internship. You **clone it**, build your work in
-**your own public repo**, and share that repo URL with Assignment 1 — it's your workspace, your
-submission, and your portfolio all at once. Everything you build stays there; we review it all
-in one pass at the end of the track.
+## 1. Abstract
+We investigate which decaying web pages present the highest ROI for content refresh efforts. Using FlyRank's daily search performance warehouse, we aggregated 90-day time-series data to isolate pages showing negative traffic trajectories but high historical search gravity. We applied a Random Forest classifier to predict the probability of a page being a high-value refresh candidate (defined as a page losing >20% of its impressions while maintaining >500 historical impressions). The model achieved a 100% Precision@20 on our holdout set, vastly outperforming our heuristic baseline of 40%. This output serves as a ranked action engine, allowing editorial teams to prioritize updates based on measured opportunity.
 
-Everything here runs on a small **anonymized** slice of real FlyRank search data. No credentials,
-no private client data, no setup headaches.
+## 2. Introduction / Problem framing
+This work supports the decision of where to allocate editorial resources for content updates. The unit of analysis is the individual `content_hash_id`. The output is a ranked queue and a refresh opportunity score (0 to 1). A human editor uses this queue to review the top pages and rewrite or update them. The cost of a wrong call is wasted editorial time on a page that cannot recover, or missing a page that is rapidly losing valuable traffic. Machine learning helps here because identifying multivariate decay across impressions, clicks, and AI referral sessions is difficult to scale manually.
 
-> **New here?** Two reads: **[SETUP.md](SETUP.md)** (GitHub, Colab, and data access — ten
-> minutes, with every silent pitfall flagged), then **[GUIDE.md](GUIDE.md)** (every file
-> explained, what to edit vs. leave alone, and where your own work goes — five minutes).
+## 3. Data
+We used the FlyRank Hugging Face release, specifically `fact_content_daily_performance` and `dim_clients`, filtering out pages with 0 impressions over the 90-day window, resulting in a dataset of 271,046 rows. We deliberately excluded future-window performance to prevent data leakage. Pseudonymous IDs (`client_hash_id`, `content_hash_id`) were used strictly for grouping during the train/test split to ensure no data leakage across clients, and were never passed as features. No client-identifying details exist anywhere in the analysis.
 
----
+## 4. Methodology
+We framed this as a binary classification task. We engineered features using DuckDB, aggregating the daily time-series into 30-day, 60-day, and 90-day windows to capture momentum: `imp_trend_pct`, `click_trend_pct`, and `pos_delta`. The target (`target_is_refresh_candidate`) is defined as a URL that lost at least 20% of its impressions in the last 30 days compared to the previous 30 days, filtered for pages with baseline visibility.
 
-## Quickstart — first win in 2 minutes
+## 5. Results (vs baseline)
+We utilized a grouped split by `client_hash_id` (GroupShuffleSplit) to prove the model generalizes to unseen domains. Our primary metric is Precision@20, as editors only review the top of the queue. We evaluate the model vs the baseline on the exact same holdout split to ensure honest discrimination.
 
-The fastest path is Google Colab (one click, zero install). Open Notebook 1 and run all cells:
+*   **Base Rate (Majority Class):** 32.40%
+*   **Baseline Precision@20:** 40.00%
+*   **Model Precision@20:** 100.00%
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/flyrank-bih/flyrank-ml-internship-starter/blob/main/notebooks/01_first_look_and_discovery.ipynb)
- **Week 1 — Run it, then discover a real truth yourself**
+## 6. Limitations & honest framing
+The current model uses only performance metrics. Incorporating content metadata (e.g., topic, age, word count) could provide richer signals. Furthermore, the model identifies correlations but does not establish causation; a decline might be due to external factors not captured in the features. The Precision@20 metric relies on an arbitrary threshold (20% impression drop, 500 historical impressions) that might need tuning via domain expert input.
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/flyrank-bih/flyrank-ml-internship-starter/blob/main/notebooks/02_your_first_readable_model.ipynb)
- **Week 2 — The model is just a rule you can read**
+## 7. Ranked recommendations
+A FlyRank editor should pull the top 20 URLs from `work/outputs/ranked_refresh_queue.csv`. Pages scoring above 0.97 require immediate factual updates or meta-tag rewrites to arrest the traffic decline, primarily driven by severe position drops (indicated by the `SEVERE_POSITION_DROP` reason code). These are directional recommendations for decision-support; they do not guarantee a ranking increase.
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/flyrank-bih/flyrank-ml-internship-starter/blob/main/notebooks/03_working_with_the_full_release.ipynb)
- **Weeks 3+ — The full release (~79M rows) via DuckDB, no download needed** — hosted at
- [`FlyRank/internship-warehouse`](https://huggingface.co/datasets/FlyRank/internship-warehouse) (gated: request access + accept the data-use terms, approval is instant)
+## 8. Reproducibility
+To reproduce this work: clone the repository, install dependencies (duckdb, huggingface_hub, pandas, scikit-learn), set the Hugging Face token in the Colab secrets, and execute `work/notebooks/capstone.ipynb` top-to-bottom. Random seed `42` is enforced.
 
-### Prefer local?
-
-```bash
-git clone <this-repo-url>
-cd flyrank-ml-internship-starter
-pip install -r requirements.txt          # or: uv pip install -r requirements.txt
-python scripts/run_all.py
-```
-
-That runs the whole pipeline on the bundled sample and writes results to `outputs/`.
-
----
-
-## What you get
-
-| Path | What it is |
-|---|---|
-| `notebooks/` | Week 1–2 **first-win notebooks** (Colab-ready). Start here. |
-| `scripts/01–05` + `run_all.py` | The runnable reference pipeline: prepare → baseline → train → evaluate → PDF. |
-| `data/raw/content_refresh_anonymized.csv` | The anonymized starter dataset (~30k pages). |
-| `outputs/` | Example outputs so you can see the **target shape** (`model_report.md`, `refresh_queue_sample.csv`, `charts/`). |
-| `work/` | **Your space.** Lane experiments and your capstone live here — see `work/README.md`. |
-| `docs/` | The core docs + the data dictionary (see below). |
-
-### Read these (in `docs/`)
-
-1. **`ml-core-foundation-framework.md`** — the first-principles map of ML as a whole system. The backbone of the live sessions.
-2. **`ml-intern-dataset-and-lane-guide.md`** — how to use the data safely, the capstone workflow, and the analysis "lanes" you can pick from.
-3. **`intern-free-tooling-guide.md`** — the zero-budget tool stack (Python, Colab, free AI assistants). You never need to pay for anything.
-4. **`data-dictionary.md`** — all 44 columns: meaning, scale, and gotchas. Keep it open while you work.
-
----
-
-## The pipeline (what `run_all.py` does)
-
-```text
-01_prepare_features.py   clean + build the feature vector, define the label
-02_baseline_score.py     a transparent hand-rule "fix this first" score
-03_train_model.py        logistic regression, decision tree, random forest (client-holdout split)
-04_evaluate_and_export.py  ranked queue + charts + Markdown report
-05_build_pdf_report.py   a shareable PDF summary
-```
-
-On the bundled sample, the learned model clearly beats the hand-written rule at picking the right
-pages to review first (**Precision@50 ≈ 0.24 → 0.74**; the model number can land 0.68–0.74
-depending on library versions — the ~3x lift is the point). The notebooks compute these numbers
-live, so they always reflect the current data and environment.
-
-**Teaching point:** the model is the capstone, but the *workflow* is the lesson —
-`problem framing → data cleaning → baseline → first model → evaluation → explainable recommendation`.
-
----
-
-## Data safety (read `DATA_USE.md`)
-
-- Only the small **anonymized** CSV ships here — no client names, domains, URLs, titles, or keywords.
-- **Never** add raw private client data to this repo or your fork. Need more data? Request an approved
-  release from your mentor — never export it yourself.
-- Don't paste client data into third-party AI tools.
-- Frame every result as **observed / measured / directional / decision-support** — never
-  "I predicted Google's algorithm."
-
-The `.gitignore` blocks datasets by default, and grading checks that no dataset was committed.
-
----
-
-## Assignments & schedule
-
-Weekly assignments, live events, and the capstone rubric live on the **InternHQ board** at
-`internhq.flyrank.ai` (your enrollment email has your access). This repo is the shared technical
-foundation they all build on.
-
-**First time with GitHub?** You need exactly four things (full walkthrough: [SETUP.md](SETUP.md)):
-1. A free account at github.com.
-2. Your own copy of this repo: **Use this template → Create a new repository** → public.
-   (One click — brings the notebooks, `work/`, and the CI leak-guard with it.)
-3. In Colab: *File → Save a copy in GitHub* → pick your copy, branch `main` (Colab handles auth).
-4. That's your submission repo — share its **github.com/you/your-repo** URL with Assignment 1
-   (never a colab.research.google.com or drive.google.com link).
-
----
-
-*Track leads: Mirza Ašćerić (ML) · Hole (data engineering). Code under MIT (see `LICENSE`); data under `DATA_USE.md`.*
+## 9. Acknowledgments & data credit
+Built on the FlyRank ML Internship dataset (https://flyrank.ai).
