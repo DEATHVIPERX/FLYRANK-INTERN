@@ -1,5 +1,8 @@
+---
 layout: default
 title: FlyRank Content Refresh Prioritization
+---
+
 
 # Capstone Report — Refresh / Content Opportunity Scoring
 
