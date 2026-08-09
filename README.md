@@ -130,7 +130,7 @@ The machine-learning model therefore improved Precision@20 by **60 percentage po
 
 ### Feature Importance
 
-![Feature Importance](../work/figures/feature.png)
+![Feature Importance](work/figures/feature.png)
 
 *Relative feature importance from the trained Random Forest classifier.*
 
@@ -138,7 +138,7 @@ Feature importance provides an indication of which performance signals the model
 
 ### Precision@20 Comparison
 
-![Precision@20 Comparison](../work/figures/precision.png)
+![Precision@20 Comparison](work/figures/precision.png)
 
 *Precision@20 comparison between the rule-based baseline and the Random Forest model.*
 
