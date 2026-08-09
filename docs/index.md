@@ -1,9 +1,3 @@
----
-layout: default
-title: FlyRank Content Refresh Prioritization
----
-
-
 # Capstone Report — Refresh / Content Opportunity Scoring
 
 - **Author:** Uns Ahmad
@@ -172,7 +166,7 @@ Relative to the baseline, this represents an improvement of **60 percentage poin
 
 The feature-importance analysis provides an additional view into how the Random Forest distinguishes refresh candidates.
 
-![Feature Importance](../work/figures/feature.png)
+![Feature Importance](figures/feature.png)
 
 *Figure 1. Relative feature importance from the trained Random Forest classifier.*
 
@@ -182,7 +176,7 @@ Feature importance should not be interpreted as causal evidence. A highly import
 
 ### 5.4 Baseline Comparison
 
-![Precision@20 Comparison](../work/figures/precision.png)
+![Precision@20 Comparison](figures/precision.png)
 
 *Figure 2. Precision@20 comparison between the rule-based baseline and the Random Forest model on the same held-out test set.*
 
